@@ -1,0 +1,54 @@
+"""
+Application configuration and constants.
+"""
+
+import os
+from pathlib import Path
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # project root
+DATA_DIR = os.getenv("DATA_DIR", str(BASE_DIR / "data" / "exports"))
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR / 'backend' / 'flood_data.db'}")
+
+# ─── File Watcher ────────────────────────────────────────────────────────────
+WATCH_INTERVAL_SECONDS = 60 * 60  # Hourly fallback scan
+FILE_STABILITY_WAIT = 2  # Seconds to wait for file to stop being written
+
+# ─── Forecast CSV patterns ───────────────────────────────────────────────────
+FORECAST_CSV_PATTERN = "Node_Flood Forecast"  # Filename must contain this
+ALERT_CSV_PATTERN = "Alert definition list"    # Filename must contain this
+
+# ─── Warning / Alert Thresholds (meters) ─────────────────────────────────────
+# These can be overridden per-node in the future
+DEFAULT_WARNING_THRESHOLD = 2.0
+DEFAULT_ALERT_THRESHOLD = 3.0
+
+# ─── Node Metadata (Kuching, Sarawak drain network) ─────────────────────────
+# GIS coordinates for known monitoring nodes
+NODE_METADATA = {
+    "Drain_46": {
+        "name": "Drain 46 - Sungai Padungan",
+        "latitude": 1.5535,
+        "longitude": 110.3485,
+        "node_type": "drain",
+        "warning_threshold": DEFAULT_WARNING_THRESHOLD,
+        "alert_threshold": DEFAULT_ALERT_THRESHOLD,
+    },
+    "Drain_53": {
+        "name": "Drain 53 - Sungai Sarawak",
+        "latitude": 1.5590,
+        "longitude": 110.3440,
+        "node_type": "drain",
+        "warning_threshold": DEFAULT_WARNING_THRESHOLD,
+        "alert_threshold": DEFAULT_ALERT_THRESHOLD,
+    },
+}
+
+# ─── API ─────────────────────────────────────────────────────────────────────
+API_V1_PREFIX = "/api/v1"
+CORS_ORIGINS = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+]
