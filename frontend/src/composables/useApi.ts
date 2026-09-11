@@ -136,6 +136,10 @@ export async function fetchContourGeoJSON(timestamp: string): Promise<ContourGeo
   return apiFetch<ContourGeoJSON>(`${API_BASE}/contours/${timestamp}`)
 }
 
+export async function checkHasMaxima(): Promise<{ available: boolean; timestep: string | null; filename: string | null }> {
+  return apiFetch<{ available: boolean; timestep: string | null; filename: string | null }>(`${API_BASE}/contours/has-maxima`)
+}
+
 // ─── Polling Composable ─────────────────────────────────────────────────────
 
 export function usePolling<T>(

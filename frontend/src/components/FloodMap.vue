@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import {
   fetchContourTimesteps,
   fetchContourGeoJSON,
+  checkHasMaxima,
   type NodeData,
   type ContourGeoJSON,
 } from '@/composables/useApi'
@@ -26,6 +27,9 @@ const currentIndex = ref<number>(0)
 const isPlaying = ref<boolean>(false)
 const isLoadingLayer = ref<boolean>(false)
 const showInundation = ref<boolean>(true)
+const hasMaxima = ref<boolean>(false)
+const isMaximaActive = ref<boolean>(false)
+const maximaTimestepKey = ref<string>('Maxima')
 let playTimer: ReturnType<typeof setInterval> | null = null
 
 // In-memory cache for seamless frame scrubbing without network lag
@@ -159,17 +163,15 @@ function onEachContourFeature(feature: any, layer: L.Layer) {
 
 // ─── GeoJSON Frame Loading & Layer Swapping ──────────────────────────────────
 
-async function loadContourFrame(index: number) {
-  if (index < 0 || index >= timesteps.value.length) return
-  const ts = timesteps.value[index]
-  if (!ts || !map) return
+async function loadContourLayerData(layerKey: string) {
+  if (!layerKey || !map) return
 
   try {
-    let geojsonData = geoJsonCache.get(ts)
+    let geojsonData = geoJsonCache.get(layerKey)
     if (!geojsonData) {
       isLoadingLayer.value = true
-      geojsonData = await fetchContourGeoJSON(ts)
-      geoJsonCache.set(ts, geojsonData)
+      geojsonData = await fetchContourGeoJSON(layerKey)
+      geoJsonCache.set(layerKey, geojsonData)
     }
 
     // Cleanly remove previous layer to prevent memory leaks or duplicate overlays
@@ -194,9 +196,32 @@ async function loadContourFrame(index: number) {
       }
     }
   } catch (err) {
-    console.error(`Failed to load contour frame for ${ts}:`, err)
+    console.error(`Failed to load contour layer for ${layerKey}:`, err)
   } finally {
     isLoadingLayer.value = false
+  }
+}
+
+async function loadContourFrame(index: number) {
+  if (index < 0 || index >= timesteps.value.length) return
+  const ts = timesteps.value[index]
+  if (!ts) return
+  await loadContourLayerData(ts)
+}
+
+async function toggleMaximaMode() {
+  if (isMaximaActive.value) {
+    // Exit Maxima mode, restore current hourly frame
+    isMaximaActive.value = false
+    if (timesteps.value.length > 0) {
+      await loadContourFrame(currentIndex.value)
+    }
+  } else {
+    // Enter Maxima mode
+    pause()
+    isMaximaActive.value = true
+    await loadContourLayerData(maximaTimestepKey.value)
+    fitToFloodExtent()
   }
 }
 
@@ -212,6 +237,9 @@ function togglePlay() {
 
 function play() {
   if (timesteps.value.length === 0) return
+  if (isMaximaActive.value) {
+    isMaximaActive.value = false
+  }
   isPlaying.value = true
   if (playTimer) clearInterval(playTimer)
 
@@ -236,6 +264,11 @@ function pause() {
 
 function stepPrev() {
   pause()
+  if (isMaximaActive.value) {
+    isMaximaActive.value = false
+    loadContourFrame(currentIndex.value)
+    return
+  }
   if (currentIndex.value > 0) {
     currentIndex.value--
     loadContourFrame(currentIndex.value)
@@ -244,6 +277,11 @@ function stepPrev() {
 
 function stepNext() {
   pause()
+  if (isMaximaActive.value) {
+    isMaximaActive.value = false
+    loadContourFrame(currentIndex.value)
+    return
+  }
   if (currentIndex.value < timesteps.value.length - 1) {
     currentIndex.value++
     loadContourFrame(currentIndex.value)
@@ -253,6 +291,9 @@ function stepNext() {
 function handleSliderChange(e: Event) {
   const val = parseInt((e.target as HTMLInputElement).value, 10)
   if (!isNaN(val)) {
+    if (isMaximaActive.value) {
+      isMaximaActive.value = false
+    }
     currentIndex.value = val
     loadContourFrame(val)
   }
@@ -267,8 +308,12 @@ function toggleInundationLayer() {
       inundationLayer.addTo(map)
       bringMarkersToTop()
       fitToFloodExtent()
-    } else if (!inundationLayer && timesteps.value.length > 0) {
-      loadContourFrame(currentIndex.value)
+    } else if (!inundationLayer) {
+      if (isMaximaActive.value) {
+        loadContourLayerData(maximaTimestepKey.value)
+      } else if (timesteps.value.length > 0) {
+        loadContourFrame(currentIndex.value)
+      }
     }
   } else {
     if (inundationLayer && map.hasLayer(inundationLayer)) {
@@ -342,9 +387,20 @@ function syncNodes() {
 
 async function initContours() {
   try {
-    const list = await fetchContourTimesteps()
-    if (Array.isArray(list) && list.length > 0) {
-      timesteps.value = list
+    const [list, maximaRes] = await Promise.allSettled([
+      fetchContourTimesteps(),
+      checkHasMaxima(),
+    ])
+
+    if (maximaRes.status === 'fulfilled' && maximaRes.value?.available) {
+      hasMaxima.value = true
+      if (maximaRes.value.timestep) {
+        maximaTimestepKey.value = maximaRes.value.timestep
+      }
+    }
+
+    if (list.status === 'fulfilled' && Array.isArray(list.value) && list.value.length > 0) {
+      timesteps.value = list.value
       currentIndex.value = 0
       await loadContourFrame(0)
     }
@@ -392,6 +448,21 @@ watch(() => props.nodes, syncNodes, { deep: true })
           2D Inundation Layer
         </button>
 
+        <!-- Peak Simulation Maxima Envelope Toggle -->
+        <button
+          v-if="hasMaxima && showInundation"
+          type="button"
+          class="layer-toggle-btn layer-toggle-btn--maxima"
+          :class="{ 'layer-toggle-btn--maxima-active': isMaximaActive }"
+          @click="toggleMaximaMode"
+          title="Toggle overall simulation peak flood inundation envelope (DTM Maxima)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="maxima-icon">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          {{ isMaximaActive ? 'Showing Peak Maxima' : 'Show Maxima Envelope' }}
+        </button>
+
         <button
           v-if="showInundation && inundationLayer"
           type="button"
@@ -418,7 +489,7 @@ watch(() => props.nodes, syncNodes, { deep: true })
           <span class="legend-i"><span class="dot dot--warn"></span>Warning</span>
           <span class="legend-i"><span class="dot dot--danger"></span>Alert</span>
         </div>
-        <div v-if="showInundation && timesteps.length > 0" class="legend-group legend-depth">
+        <div v-if="showInundation && (timesteps.length > 0 || isMaximaActive)" class="legend-group legend-depth">
           <span class="legend-label">Depth:</span>
           <span class="legend-i"><span class="depth-swatch depth-swatch--shallow"></span>&lt;0.5m</span>
           <span class="legend-i"><span class="depth-swatch depth-swatch--mid"></span>0.5-1.2m</span>
@@ -455,7 +526,7 @@ watch(() => props.nodes, syncNodes, { deep: true })
           <button
             type="button"
             class="btn-step"
-            :disabled="currentIndex === 0"
+            :disabled="!isMaximaActive && currentIndex === 0"
             @click="stepPrev"
             title="Previous Hour"
           >
@@ -466,7 +537,7 @@ watch(() => props.nodes, syncNodes, { deep: true })
           <button
             type="button"
             class="btn-step"
-            :disabled="currentIndex === timesteps.length - 1"
+            :disabled="!isMaximaActive && currentIndex === timesteps.length - 1"
             @click="stepNext"
             title="Next Hour"
           >
@@ -478,12 +549,19 @@ watch(() => props.nodes, syncNodes, { deep: true })
 
         <!-- Frame Time Readout -->
         <div class="time-readout">
-          <span class="time-pill">
-            <span class="radar-dot" :class="{ 'radar-dot--live': isPlaying }"></span>
-            FRAME {{ currentTimestep }}
+          <span class="time-pill" :class="{ 'time-pill--maxima': isMaximaActive }">
+            <span class="radar-dot" :class="{ 'radar-dot--live': isPlaying, 'radar-dot--maxima': isMaximaActive }"></span>
+            {{ isMaximaActive ? 'PEAK ENVELOPE' : `FRAME ${currentTimestep}` }}
           </span>
-          <span class="clock-display">{{ currentTimestep.toLowerCase() === 'maxima' ? 'MAXIMA ENVELOPE' : `${currentFormattedTime} HRS` }}</span>
+          <span class="clock-display" :class="{ 'clock-display--maxima': isMaximaActive }">
+            {{ isMaximaActive ? 'SIMULATION MAXIMA EXTENT' : `${currentFormattedTime} HRS` }}
+          </span>
         </div>
+      </div>
+
+      <!-- Maxima Information Banner -->
+      <div v-if="isMaximaActive" class="maxima-banner">
+        <span>★ Viewing overall peak inundation envelope (DTM Maxima). Scrub timeline or press Play to resume hourly sequence.</span>
       </div>
 
       <!-- Scrubber Timeline Slider -->
@@ -502,7 +580,7 @@ watch(() => props.nodes, syncNodes, { deep: true })
             v-for="(ts, idx) in timesteps"
             :key="ts"
             class="tick-label"
-            :class="{ 'tick-label--active': idx === currentIndex }"
+            :class="{ 'tick-label--active': !isMaximaActive && idx === currentIndex }"
           >
             {{ ts.length === 4 ? `${ts.slice(0, 2)}:${ts.slice(2)}` : ts }}
           </span>
@@ -578,6 +656,29 @@ watch(() => props.nodes, syncNodes, { deep: true })
   background: rgba(2, 132, 199, 0.15);
   border-color: rgba(56, 189, 248, 0.4);
   color: #38bdf8;
+}
+
+.layer-toggle-btn--maxima {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #d97706;
+}
+
+.layer-toggle-btn--maxima:hover {
+  border-color: rgba(245, 158, 11, 0.7);
+  color: #f59e0b;
+}
+
+.layer-toggle-btn--maxima-active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: #f59e0b;
+  color: #fbbf24;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+.maxima-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .toggle-dot {
@@ -742,6 +843,12 @@ watch(() => props.nodes, syncNodes, { deep: true })
   color: var(--color-text-secondary);
 }
 
+.time-pill--maxima {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
 .radar-dot {
   width: 6px;
   height: 6px;
@@ -755,12 +862,34 @@ watch(() => props.nodes, syncNodes, { deep: true })
   animation: blink 1s infinite alternate;
 }
 
+.radar-dot--maxima {
+  background: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
+}
+
 .clock-display {
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 700;
   color: #38bdf8;
   letter-spacing: 0.05em;
+}
+
+.clock-display--maxima {
+  color: #fbbf24;
+}
+
+.maxima-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 
 /* ── Slider Container ── */

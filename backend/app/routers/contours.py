@@ -33,10 +33,11 @@ def _get_geojson_files() -> list[Path]:
 @router.get("/timesteps", response_model=list[str])
 async def list_contour_timesteps():
     """
-    Return an ordered list of available contour timesteps.
+    Return an ordered list of available chronological contour timesteps.
+    Excludes overall peak 'Maxima' envelopes.
 
     Example response:
-        ["1000", "1100", "1200", "1300", "1400", "1500", "1600", "1700", "1800"]
+        ["0930", "1030", "1130", "1230", "1330", "1430", "1530", "1630", "1730"]
     """
     files = _get_geojson_files()
     timesteps: list[str] = []
@@ -44,12 +45,31 @@ async def list_contour_timesteps():
     for f in files:
         meta = extract_timestep(f.name)
         ts = meta.get("timestep")
-        if ts and ts not in timesteps:
+        # Exclude Maxima from chronological timestamp timeline
+        if ts and ts.lower() != "maxima" and ts not in timesteps:
             timesteps.append(ts)
 
-    # Sort timesteps chronologically / numerically, with non-numeric (e.g. Maxima) at the end
-    timesteps.sort(key=lambda x: (0, int(x)) if x.isdigit() else (1, x))
+    # Sort timesteps chronologically / numerically
+    timesteps.sort(key=lambda x: int(x) if x.isdigit() else 9999)
     return timesteps
+
+
+@router.get("/has-maxima")
+async def has_maxima_envelope():
+    """Check if a peak/maximum flood inundation envelope layer is available."""
+    files = _get_geojson_files()
+    for f in files:
+        if "maxima" in f.name.lower():
+            return {
+                "available": True,
+                "timestep": "Maxima",
+                "filename": f.name,
+            }
+    return {
+        "available": False,
+        "timestep": None,
+        "filename": None,
+    }
 
 
 @router.get("/metadata")
