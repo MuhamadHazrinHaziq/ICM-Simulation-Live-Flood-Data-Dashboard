@@ -60,9 +60,9 @@ async def lifespan(app: FastAPI):
     scheduler.start()
     logger.info(f"Periodic scanner scheduled (every {WATCH_INTERVAL_SECONDS}s).")
 
-    # Run an initial scan on startup
-    await scan_directory()
-    logger.info("Initial directory scan complete.")
+    # Run an initial scan on startup in background (non-blocking)
+    asyncio.create_task(scan_directory())
+    logger.info("Initial directory scan scheduled.")
 
     logger.info("=" * 60)
     logger.info("  FLOOD LIVE DATA — Ready")

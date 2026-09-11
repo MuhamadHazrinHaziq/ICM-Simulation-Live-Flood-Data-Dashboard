@@ -18,11 +18,12 @@ FILE_STABILITY_WAIT = 2  # Seconds to wait for file to stop being written
 # ─── File Patterns ───────────────────────────────────────────────────────────
 FORECAST_CSV_PATTERN = "Node_Flood Forecast"  # Filename must contain this
 ALERT_CSV_PATTERN = "Alert definition list"    # Filename must contain this
-SHAPEFILE_PATTERN = "FloodContours"            # Filename prefix/match for ICM 2D contours
+SHAPEFILE_PATTERN = "FloodContours"            # Legacy single pattern
+SHAPEFILE_PATTERNS = ["FloodContours", "DTM_"] # Filename prefixes for ICM 2D contours
 
 # ─── GIS / Projections ───────────────────────────────────────────────────────
 # Default local Sarawak CRS used when shapefile .prj is omitted or undefined
-DEFAULT_LOCAL_CRS = "EPSG:29873"  # Timbalai 1948 / Sarawak RSO Borneo (m)
+DEFAULT_LOCAL_CRS = "EPSG:29874"  # Timbalai 1948 / RSO Sarawak LSD (m)
 TARGET_CRS = "EPSG:4326"         # WGS84 for GeoJSON / Web Mercator maps
 
 # ─── Warning / Alert Thresholds (meters) ─────────────────────────────────────

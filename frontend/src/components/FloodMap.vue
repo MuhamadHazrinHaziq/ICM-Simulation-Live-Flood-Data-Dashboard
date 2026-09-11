@@ -16,6 +16,7 @@ const mapEl = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let markers: L.LayerGroup | null = null
 let inundationLayer: L.GeoJSON | null = null
+let hasFittedContours = false
 
 const COLORS: Record<string, string> = { normal: '#34c471', warning: '#e6a020', alert: '#e04848' }
 
@@ -35,7 +36,7 @@ const currentTimestep = computed(() => timesteps.value[currentIndex.value] || ''
 const currentFormattedTime = computed(() => {
   const ts = currentTimestep.value
   if (!ts) return '—'
-  if (ts.length === 4) {
+  if (ts.length === 4 && /^\d{4}$/.test(ts)) {
     return `${ts.slice(0, 2)}:${ts.slice(2)}`
   }
   return ts
@@ -186,6 +187,11 @@ async function loadContourFrame(index: number) {
       inundationLayer.addTo(map)
       // Ensure node telemetry markers stay on top
       bringMarkersToTop()
+
+      if (!hasFittedContours && inundationLayer.getBounds().isValid()) {
+        map.fitBounds(inundationLayer.getBounds().pad(0.35), { maxZoom: 16 })
+        hasFittedContours = true
+      }
     }
   } catch (err) {
     console.error(`Failed to load contour frame for ${ts}:`, err)
@@ -260,6 +266,7 @@ function toggleInundationLayer() {
     if (inundationLayer && !map.hasLayer(inundationLayer)) {
       inundationLayer.addTo(map)
       bringMarkersToTop()
+      fitToFloodExtent()
     } else if (!inundationLayer && timesteps.value.length > 0) {
       loadContourFrame(currentIndex.value)
     }
@@ -267,6 +274,14 @@ function toggleInundationLayer() {
     if (inundationLayer && map.hasLayer(inundationLayer)) {
       map.removeLayer(inundationLayer)
     }
+  }
+}
+
+function fitToFloodExtent() {
+  if (!map || !inundationLayer) return
+  const bounds = inundationLayer.getBounds()
+  if (bounds.isValid()) {
+    map.fitBounds(bounds.pad(0.35), { maxZoom: 16, animate: true })
   }
 }
 
@@ -316,8 +331,8 @@ function syncNodes() {
     markers!.addLayer(m)
   })
 
-  // Fit bounds if no contour layer active
-  if (props.nodes.length && !inundationLayer) {
+  // Only fit to nodes if contours haven't centered the view
+  if (props.nodes.length && !hasFittedContours && (!inundationLayer || !map.hasLayer(inundationLayer))) {
     map.fitBounds(
       L.latLngBounds(props.nodes.map((n) => [n.latitude, n.longitude] as [number, number])).pad(0.4),
       { maxZoom: 15 }
@@ -375,6 +390,23 @@ watch(() => props.nodes, syncNodes, { deep: true })
         >
           <span class="toggle-dot"></span>
           2D Inundation Layer
+        </button>
+
+        <button
+          v-if="showInundation && inundationLayer"
+          type="button"
+          class="layer-toggle-btn"
+          @click="fitToFloodExtent"
+          title="Center Map on 2D Flood Inundation Extent"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="22" y1="12" x2="18" y2="12"/>
+            <line x1="6" y1="12" x2="2" y2="12"/>
+            <line x1="12" y1="6" x2="12" y2="2"/>
+            <line x1="12" y1="22" x2="12" y2="18"/>
+          </svg>
+          Zoom to Flood
         </button>
       </div>
 
@@ -450,7 +482,7 @@ watch(() => props.nodes, syncNodes, { deep: true })
             <span class="radar-dot" :class="{ 'radar-dot--live': isPlaying }"></span>
             FRAME {{ currentTimestep }}
           </span>
-          <span class="clock-display">{{ currentFormattedTime }} HRS</span>
+          <span class="clock-display">{{ currentTimestep.toLowerCase() === 'maxima' ? 'MAXIMA ENVELOPE' : `${currentFormattedTime} HRS` }}</span>
         </div>
       </div>
 

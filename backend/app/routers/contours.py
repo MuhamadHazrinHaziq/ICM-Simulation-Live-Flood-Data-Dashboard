@@ -47,8 +47,8 @@ async def list_contour_timesteps():
         if ts and ts not in timesteps:
             timesteps.append(ts)
 
-    # Sort timesteps chronologically / numerically
-    timesteps.sort(key=lambda x: int(x) if x.isdigit() else x)
+    # Sort timesteps chronologically / numerically, with non-numeric (e.g. Maxima) at the end
+    timesteps.sort(key=lambda x: (0, int(x)) if x.isdigit() else (1, x))
     return timesteps
 
 
@@ -73,7 +73,11 @@ async def get_contours_metadata():
             "modified_at": stat.st_mtime,
         })
 
-    frames.sort(key=lambda x: int(x["timestep"]) if str(x["timestep"]).isdigit() else str(x["timestep"]))
+    frames.sort(
+        key=lambda x: (0, int(x["timestep"]))
+        if str(x["timestep"]).isdigit()
+        else (1, str(x["timestep"]))
+    )
     return {
         "total_frames": len(frames),
         "timesteps": [frame["timestep"] for frame in frames if frame.get("timestep")],

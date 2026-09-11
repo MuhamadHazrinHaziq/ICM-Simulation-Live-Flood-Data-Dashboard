@@ -23,6 +23,7 @@ from app.services.gis_converter import (
     convert_shapefile_to_geojson,
     convert_all_shapefiles,
     verify_shapefile_ready,
+    is_contour_shapefile,
 )
 
 logger = logging.getLogger("flood.watcher")
@@ -132,7 +133,7 @@ class ExportDirectoryEventHandler(FileSystemEventHandler):
         shp_path = str(Path(filepath).with_suffix(".shp"))
         filename = Path(shp_path).name
 
-        if SHAPEFILE_PATTERN.lower() not in filename.lower():
+        if not is_contour_shapefile(filename):
             return
 
         if shp_path in self._processing:

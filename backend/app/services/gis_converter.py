@@ -24,7 +24,7 @@ from app.config import (
     DATA_DIR,
     DEFAULT_LOCAL_CRS,
     GEOJSON_DIR,
-    SHAPEFILE_PATTERN,
+    SHAPEFILE_PATTERNS,
     TARGET_CRS,
 )
 
@@ -40,6 +40,29 @@ def extract_timestep(filename: str) -> dict[str, str | None]:
       - 'FloodContours_1100_00.shp'     -> date: None,     timestep: '1100', label: '11:00'
     """
     name = Path(filename).stem
+
+    # Special case: Maxima / Peak envelope
+    if "maxima" in name.lower():
+        return {
+            "date": None,
+            "timestep": "Maxima",
+            "label": "Peak Maxima",
+            "raw": name,
+        }
+
+    # Pattern 0: DTM_YYYYMMDDTHHMM (e.g. DTM_20260911T0930)
+    match_iso = re.search(r"(\d{8})[T_](\d{4})", name)
+    if match_iso:
+        date_part = match_iso.group(1)
+        time_part = match_iso.group(2)
+        hour = time_part[:2]
+        minute = time_part[2:]
+        return {
+            "date": date_part,
+            "timestep": time_part,
+            "label": f"{hour}:{minute}",
+            "raw": name,
+        }
 
     # Pattern 1: FloodContours_YYMMDD_HHMM or FloodContours_YYYYMMDD_HHMM
     match_date_time = re.search(r"(\d{6,8})_(\d{4})", name)
@@ -165,8 +188,16 @@ def convert_shapefile_to_geojson(
             bounds = gdf.total_bounds  # minx, miny, maxx, maxy
             minx, miny, maxx, maxy = bounds
 
-            if minx > 1000 and miny > 1000:
-                # Coordinate values are in large meter units (e.g. 150,000, 170,000)
+            if minx > 1500000 and miny > 4000000:
+                # Timbalai 1948 / RSO Sarawak LSD (m) - EPSG:29874
+                logger.info(
+                    f"CRS missing. Coordinates ({minx:.1f}, {miny:.1f}) indicate "
+                    f"Timbalai 1948 / RSO Sarawak LSD (EPSG:29874)."
+                )
+                gdf.set_crs("EPSG:29874", inplace=True)
+                gdf = gdf.to_crs(TARGET_CRS)
+            elif minx > 1000 and miny > 1000:
+                # Coordinate values are in standard meter units (e.g. 150,000, 170,000)
                 logger.info(
                     f"CRS missing but coordinates in meter scale ({minx:.1f}, {miny:.1f}). "
                     f"Assuming local Sarawak RSO ({DEFAULT_LOCAL_CRS})."
@@ -275,13 +306,22 @@ def convert_shapefile_to_geojson(
         return None
 
 
+def is_contour_shapefile(name: str) -> bool:
+    """Check if filename matches any configured contour shapefile prefix."""
+    lower = name.lower()
+    for pattern in SHAPEFILE_PATTERNS:
+        if pattern.lower() in lower:
+            return True
+    return False
+
+
 def convert_all_shapefiles(
     exports_dir: str | Path | None = None,
     output_dir: str | Path | None = None,
     force: bool = False,
 ) -> list[dict[str, Any]]:
     """
-    Scan exports_dir for all .shp files matching SHAPEFILE_PATTERN
+    Scan exports_dir for all .shp files matching SHAPEFILE_PATTERNS
     and convert those that have not yet been converted or have been updated.
     """
     exp_path = Path(exports_dir or DATA_DIR)
@@ -295,7 +335,7 @@ def convert_all_shapefiles(
     results = []
 
     for shp in shp_files:
-        if SHAPEFILE_PATTERN.lower() not in shp.name.lower():
+        if not is_contour_shapefile(shp.name):
             continue
 
         target_geojson = out_path / f"{shp.stem}.geojson"
