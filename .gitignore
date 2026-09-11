@@ -34,6 +34,19 @@ Thumbs.db
 # Logs
 *.log
 
-# Data (keep structure, ignore actual CSV data)
-data/exports/*.csv
+# Data (keep directory structure, ignore confidential simulation & telemetry data)
+data/exports/*
 !data/exports/.gitkeep
+data/geojson/*
+!data/geojson/.gitkeep
+
+# Confidential GIS and spatial data files
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.sbn
+*.sbx
+*.geojson
+*.csv
