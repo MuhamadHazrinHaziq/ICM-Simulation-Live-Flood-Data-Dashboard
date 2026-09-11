@@ -15,7 +15,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.config import API_V1_PREFIX, CORS_ORIGINS, WATCH_INTERVAL_SECONDS
 from app.database import init_db
-from app.routers import forecasts, alerts, dashboard
+from app.routers import forecasts, alerts, dashboard, contours
 from app.services.file_watcher import FileWatcherService, scan_directory
 
 # ─── Logging ─────────────────────────────────────────────────────────────────
@@ -104,6 +104,7 @@ app.add_middleware(
 app.include_router(forecasts.router)
 app.include_router(alerts.router)
 app.include_router(dashboard.router)
+app.include_router(contours.router)
 
 
 @app.get("/", tags=["Health"])

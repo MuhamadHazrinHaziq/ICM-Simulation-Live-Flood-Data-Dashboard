@@ -7,3 +7,7 @@ apscheduler
 pandas
 python-dotenv
 pydantic
+geopandas
+shapely
+pyproj
+pyogrio

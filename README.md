@@ -108,9 +108,25 @@ Flood Live Data Website/
 │   │   └── main.ts              # Entry point
 │   └── vite.config.ts
 ├── data/
-│   └── exports/                 # Drop ICM CSVs here
+│   ├── exports/                 # Drop ICM CSVs and Shapefiles (.shp, .dbf, .shx) here
+│   └── geojson/                 # Converted WGS84 GeoJSON layers for Leaflet
 └── README.md
 ```
+
+---
+
+## 🌊 2D Flood Inundation & Time-Lapse Player
+
+FloodCast automatically ingests InfoWorks ICM 2D flood inundation Shapefiles:
+
+1. **Auto-Reprojection**: Reads incoming `.shp`, `.dbf`, `.shx` files, automatically detects local coordinate systems (such as Sarawak RSO `EPSG:29873` or UTM), and reprojects them into standard WGS84 (`EPSG:4326`) GeoJSON.
+2. **REST Endpoints**:
+   - `GET /api/v1/contours/timesteps` — Returns chronological list of simulation frames (e.g. `["1000", "1100", ..., "1800"]`).
+   - `GET /api/v1/contours/{timestamp}` — Returns GeoJSON `FeatureCollection` with depth and elevation properties.
+3. **Interactive Simulation Player**:
+   - Play/pause 1-second interval animation through simulation hours.
+   - Interactive time slider scrubber with direct frame jumps.
+   - Depth-graded styling (`<0.5m` cyan, `0.5-1.2m` blue, `>1.2m` dark blue) with interactive telemetry popups on click/hover.
 
 ---
 

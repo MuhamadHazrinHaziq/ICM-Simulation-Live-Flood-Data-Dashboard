@@ -87,6 +87,29 @@ export interface DashboardSummaryData {
   nodes_in_alert: number
 }
 
+export interface GeoJSONFeatureProperties {
+  Zone?: string
+  Depth?: number
+  depth?: number
+  Elevation?: number
+  elevation?: number
+  MaxDepth?: number
+  Hazard?: string
+  Timestep?: string
+  timestep?: string
+  timestep_label?: string
+  [key: string]: any
+}
+
+export interface ContourGeoJSON {
+  type: string
+  features: Array<{
+    type: string
+    geometry: any
+    properties: GeoJSONFeatureProperties
+  }>
+}
+
 // ─── API Functions ──────────────────────────────────────────────────────────
 
 export async function fetchNodes(): Promise<NodeData[]> {
@@ -103,6 +126,14 @@ export async function fetchActiveAlerts(): Promise<AlertListData> {
 
 export async function fetchDashboardSummary(): Promise<DashboardSummaryData> {
   return apiFetch<DashboardSummaryData>(`${API_BASE}/dashboard/summary`)
+}
+
+export async function fetchContourTimesteps(): Promise<string[]> {
+  return apiFetch<string[]>(`${API_BASE}/contours/timesteps`)
+}
+
+export async function fetchContourGeoJSON(timestamp: string): Promise<ContourGeoJSON> {
+  return apiFetch<ContourGeoJSON>(`${API_BASE}/contours/${timestamp}`)
 }
 
 // ─── Polling Composable ─────────────────────────────────────────────────────

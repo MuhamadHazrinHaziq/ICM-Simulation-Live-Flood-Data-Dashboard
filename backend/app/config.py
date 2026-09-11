@@ -8,15 +8,22 @@ from pathlib import Path
 # ─── Paths ───────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # project root
 DATA_DIR = os.getenv("DATA_DIR", str(BASE_DIR / "data" / "exports"))
+GEOJSON_DIR = os.getenv("GEOJSON_DIR", str(BASE_DIR / "data" / "geojson"))
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{BASE_DIR / 'backend' / 'flood_data.db'}")
 
 # ─── File Watcher ────────────────────────────────────────────────────────────
 WATCH_INTERVAL_SECONDS = 60 * 60  # Hourly fallback scan
 FILE_STABILITY_WAIT = 2  # Seconds to wait for file to stop being written
 
-# ─── Forecast CSV patterns ───────────────────────────────────────────────────
+# ─── File Patterns ───────────────────────────────────────────────────────────
 FORECAST_CSV_PATTERN = "Node_Flood Forecast"  # Filename must contain this
 ALERT_CSV_PATTERN = "Alert definition list"    # Filename must contain this
+SHAPEFILE_PATTERN = "FloodContours"            # Filename prefix/match for ICM 2D contours
+
+# ─── GIS / Projections ───────────────────────────────────────────────────────
+# Default local Sarawak CRS used when shapefile .prj is omitted or undefined
+DEFAULT_LOCAL_CRS = "EPSG:29873"  # Timbalai 1948 / Sarawak RSO Borneo (m)
+TARGET_CRS = "EPSG:4326"         # WGS84 for GeoJSON / Web Mercator maps
 
 # ─── Warning / Alert Thresholds (meters) ─────────────────────────────────────
 # These can be overridden per-node in the future
