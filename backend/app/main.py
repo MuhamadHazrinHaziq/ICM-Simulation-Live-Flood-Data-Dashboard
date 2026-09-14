@@ -1,5 +1,5 @@
-"""
-Flood Live Data — FastAPI Application Entry Point.
+﻿"""
+Flood Live Data â€” FastAPI Application Entry Point.
 
 Initializes the database, starts the file watcher service, and mounts
 all API routers. Includes CORS middleware for frontend dev server.
@@ -15,18 +15,18 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.config import API_V1_PREFIX, CORS_ORIGINS, WATCH_INTERVAL_SECONDS
 from app.database import init_db
-from app.routers import forecasts, alerts, dashboard, contours
+from app.routers import forecasts, alerts, dashboard, contours, geojson
 from app.services.file_watcher import FileWatcherService, scan_directory
 
-# ─── Logging ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Logging â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s │ %(name)-20s │ %(levelname)-7s │ %(message)s",
+    format="%(asctime)s â”‚ %(name)-20s â”‚ %(levelname)-7s â”‚ %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("flood.main")
 
-# ─── Services ────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 watcher_service = FileWatcherService()
 scheduler = AsyncIOScheduler()
 
@@ -35,9 +35,9 @@ scheduler = AsyncIOScheduler()
 async def lifespan(app: FastAPI):
     """Startup and shutdown lifecycle management."""
 
-    # ── Startup ──────────────────────────────────────────────────────────
+    # â”€â”€ Startup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     logger.info("=" * 60)
-    logger.info("  FLOOD LIVE DATA — Starting up")
+    logger.info("  FLOOD LIVE DATA â€” Starting up")
     logger.info("=" * 60)
 
     # Initialize database tables and seed node metadata
@@ -65,19 +65,19 @@ async def lifespan(app: FastAPI):
     logger.info("Initial directory scan scheduled.")
 
     logger.info("=" * 60)
-    logger.info("  FLOOD LIVE DATA — Ready")
+    logger.info("  FLOOD LIVE DATA â€” Ready")
     logger.info("=" * 60)
 
     yield  # Application runs here
 
-    # ── Shutdown ─────────────────────────────────────────────────────────
+    # â”€â”€ Shutdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     logger.info("Shutting down...")
     scheduler.shutdown(wait=False)
     watcher_service.stop()
     logger.info("Shutdown complete.")
 
 
-# ─── FastAPI App ─────────────────────────────────────────────────────────────
+# â”€â”€â”€ FastAPI App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app = FastAPI(
     title="Flood Live Data API",
     description=(
@@ -91,7 +91,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ─── CORS Middleware ─────────────────────────────────────────────────────────
+# â”€â”€â”€ CORS Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -100,11 +100,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Mount Routers ───────────────────────────────────────────────────────────
+# â”€â”€â”€ Mount Routers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.include_router(forecasts.router)
 app.include_router(alerts.router)
 app.include_router(dashboard.router)
 app.include_router(contours.router)
+app.include_router(geojson.router)
 
 
 @app.get("/", tags=["Health"])
@@ -126,3 +127,4 @@ async def health():
         "watcher_running": watcher_service.is_running,
         "scheduler_running": scheduler.running,
     }
+
