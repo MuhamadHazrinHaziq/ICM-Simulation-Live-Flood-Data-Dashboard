@@ -12,13 +12,19 @@ const logoLoaded = ref(true)
     <aside class="sidebar">
       <div class="sidebar-head">
         <div class="brand-badge" title="Bimage Consulting">
-          <img
-            v-if="logoLoaded"
-            src="/Bimage.png"
-            alt="Bimage Consulting"
-            class="brand-logo"
-            @error="logoLoaded = false"
-          />
+          <template v-if="logoLoaded">
+            <img
+              src="/Bimage.png"
+              alt="Bimage Consulting"
+              class="brand-logo brand-logo-full"
+              @error="logoLoaded = false"
+            />
+            <img
+              src="/Bimage-mark.png"
+              alt="Bimage Consulting"
+              class="brand-logo brand-logo-mark"
+            />
+          </template>
           <svg
             v-else
             class="logo-icon"
@@ -88,6 +94,9 @@ const logoLoaded = ref(true)
   flex-shrink: 0;
   transition: width 0.2s ease;
   overflow: hidden;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 .collapsed .sidebar { width: 56px; }
 
@@ -113,11 +122,20 @@ const logoLoaded = ref(true)
 }
 
 .brand-logo {
+  object-fit: contain;
+  display: block;
+}
+
+.brand-logo-full {
   width: 100%;
   height: 38px;
   max-width: 175px;
-  object-fit: contain;
-  display: block;
+}
+
+.brand-logo-mark {
+  display: none;
+  width: 28px;
+  height: 28px;
 }
 
 .collapsed .sidebar-head {
@@ -125,18 +143,19 @@ const logoLoaded = ref(true)
 }
 
 .collapsed .brand-badge {
-  width: 42px;
-  height: 42px;
-  padding: 4px;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
-.collapsed .brand-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  object-position: 0% center;
+.collapsed .brand-logo-full {
+  display: none;
+}
+
+.collapsed .brand-logo-mark {
+  display: block;
 }
 
 .logo-icon {
