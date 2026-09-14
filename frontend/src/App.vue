@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import DashboardView from '@/views/DashboardView.vue'
 
 const sidebarOpen = ref(true)
+const logoLoaded = ref(true)
 </script>
 
 <template>
@@ -10,8 +11,27 @@ const sidebarOpen = ref(true)
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-head">
-        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-        <span v-show="sidebarOpen" class="logo-text">FloodCast</span>
+        <div class="brand-badge" title="Bimage Consulting">
+          <img
+            v-if="logoLoaded"
+            src="/Bimage.png"
+            alt="Bimage Consulting"
+            class="brand-logo"
+            @error="logoLoaded = false"
+          />
+          <svg
+            v-else
+            class="logo-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          </svg>
+        </div>
       </div>
 
       <nav class="sidebar-nav">
@@ -44,10 +64,6 @@ const sidebarOpen = ref(true)
           <h1 class="topbar-title">Flood Live Forecast</h1>
           <p class="topbar-sub">Kuching, Sarawak &mdash; Real-time Monitoring</p>
         </div>
-        <div class="topbar-status">
-          <span class="dot dot--ok"></span>
-          <span class="status-label">System Online</span>
-        </div>
       </header>
       <div class="content">
         <DashboardView />
@@ -64,7 +80,7 @@ const sidebarOpen = ref(true)
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .sidebar {
-  width: 200px;
+  width: 220px;
   background: var(--color-bg-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -73,29 +89,61 @@ const sidebarOpen = ref(true)
   transition: width 0.2s ease;
   overflow: hidden;
 }
-.collapsed .sidebar { width: 52px; }
+.collapsed .sidebar { width: 56px; }
 
 .sidebar-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 18px 14px;
+  justify-content: center;
+  padding: 14px 12px;
   border-bottom: 1px solid var(--color-border-subtle);
+  min-height: 64px;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  transition: all 0.2s ease;
+}
+
+.brand-logo {
+  width: 100%;
+  height: 38px;
+  max-width: 175px;
+  object-fit: contain;
+  display: block;
+}
+
+.collapsed .sidebar-head {
+  padding: 12px 6px;
+}
+
+.collapsed .brand-badge {
+  width: 42px;
+  height: 42px;
+  padding: 4px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.collapsed .brand-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  object-position: 0% center;
 }
 
 .logo-icon {
-  width: 22px;
-  height: 22px;
-  color: var(--color-accent);
+  width: 24px;
+  height: 24px;
+  color: #0a0e1a;
   flex-shrink: 0;
-}
-
-.logo-text {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--color-text);
-  white-space: nowrap;
-  letter-spacing: -0.02em;
 }
 
 .sidebar-nav {
@@ -175,21 +223,8 @@ const sidebarOpen = ref(true)
   margin-top: 1px;
 }
 
-.topbar-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 12px;
-  background: var(--color-ok-dim);
-  border-radius: 20px;
-}
 
-.status-label {
-  font-size: 0.73rem;
-  font-weight: 600;
-  color: var(--color-ok);
-  letter-spacing: 0.02em;
-}
+
 
 .content {
   flex: 1;
