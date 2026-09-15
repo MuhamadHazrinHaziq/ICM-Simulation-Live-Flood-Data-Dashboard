@@ -4,6 +4,7 @@ import DashboardView from '@/views/DashboardView.vue'
 
 const sidebarOpen = ref(true)
 const logoLoaded = ref(true)
+const baseUrl = import.meta.env.BASE_URL
 </script>
 
 <template>
@@ -14,13 +15,13 @@ const logoLoaded = ref(true)
         <div class="brand-badge" title="Bimage Consulting">
           <template v-if="logoLoaded">
             <img
-              src="/Bimage.png"
+              :src="`${baseUrl}Bimage.png`"
               alt="Bimage Consulting"
               class="brand-logo brand-logo-full"
               @error="logoLoaded = false"
             />
             <img
-              src="/Bimage-mark.png"
+              :src="`${baseUrl}Bimage-mark.png`"
               alt="Bimage Consulting"
               class="brand-logo brand-logo-mark"
             />
