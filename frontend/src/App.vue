@@ -5,6 +5,9 @@ import DashboardView from '@/views/DashboardView.vue'
 const sidebarOpen = ref(true)
 const logoLoaded = ref(true)
 const baseUrl = import.meta.env.BASE_URL
+const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) || ''
+const docsUrl = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/docs` : `${baseUrl}docs/`
+const healthUrl = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/health` : `${baseUrl}health/`
 </script>
 
 <template>
@@ -46,11 +49,11 @@ const baseUrl = import.meta.env.BASE_URL
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span v-show="sidebarOpen">Dashboard</span>
         </a>
-        <a class="nav-link" href="/docs" target="_blank">
+        <a class="nav-link" :href="docsUrl" target="_blank">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           <span v-show="sidebarOpen">API Docs</span>
         </a>
-        <a class="nav-link" href="/health" target="_blank">
+        <a class="nav-link" :href="healthUrl" target="_blank">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           <span v-show="sidebarOpen">Health</span>
         </a>

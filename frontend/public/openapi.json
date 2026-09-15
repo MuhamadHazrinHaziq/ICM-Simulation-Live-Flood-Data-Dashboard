@@ -1,0 +1,1055 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Flood Live Data API",
+    "description": "Automated flood forecasting platform. Monitors ICM simulation CSV outputs and exposes live forecast data via plugin-friendly REST API endpoints.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/nodes": {
+      "get": {
+        "tags": [
+          "Forecasts"
+        ],
+        "summary": "List Nodes",
+        "description": "Return all monitoring nodes with their current status.",
+        "operationId": "list_nodes_api_v1_nodes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NodeResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Nodes Api V1 Nodes Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/node-forecast": {
+      "get": {
+        "tags": [
+          "Forecasts"
+        ],
+        "summary": "Get Node Forecast",
+        "description": "Return simulated hourly water levels for a specific node.\n\nPlugin-friendly endpoint: external tools can pull forecast data via:\n    GET /api/v1/node-forecast?node_id=Drain_53",
+        "operationId": "get_node_forecast_api_v1_node_forecast_get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Node identifier, e.g. Drain_53",
+              "title": "Node Id"
+            },
+            "description": "Node identifier, e.g. Drain_53"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start of time range (ISO 8601)",
+              "title": "Start"
+            },
+            "description": "Start of time range (ISO 8601)"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "End of time range (ISO 8601)",
+              "title": "End"
+            },
+            "description": "End of time range (ISO 8601)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "description": "Maximum number of readings",
+              "default": 1000,
+              "title": "Limit"
+            },
+            "description": "Maximum number of readings"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/node-forecast/latest": {
+      "get": {
+        "tags": [
+          "Forecasts"
+        ],
+        "summary": "Get Latest Forecast By Location",
+        "description": "Return the latest spatial flood prediction for the nearest node.\n\nPlugin-friendly endpoint:\n    GET /api/v1/node-forecast/latest?lat=1.4908&lon=110.2738",
+        "operationId": "get_latest_forecast_by_location_api_v1_node_forecast_latest_get",
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Latitude",
+              "title": "Lat"
+            },
+            "description": "Latitude"
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Longitude",
+              "title": "Lon"
+            },
+            "description": "Longitude"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LatestForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/active": {
+      "get": {
+        "tags": [
+          "Alerts"
+        ],
+        "summary": "Get Active Alerts",
+        "description": "Return currently active/forecasted alert and warning thresholds.\n\nPlugin-friendly endpoint:\n    GET /api/v1/alerts/active",
+        "operationId": "get_active_alerts_api_v1_alerts_active_get",
+        "parameters": [
+          {
+            "name": "target_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by target node ID",
+              "title": "Target Id"
+            },
+            "description": "Filter by target node ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/history": {
+      "get": {
+        "tags": [
+          "Alerts"
+        ],
+        "summary": "Get Alert History",
+        "description": "Return all alerts with optional filtering.\n\nPlugin-friendly endpoint:\n    GET /api/v1/alerts/history?target_id=Drain_53&priority=Critical",
+        "operationId": "get_alert_history_api_v1_alerts_history_get",
+        "parameters": [
+          {
+            "name": "target_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by target node ID",
+              "title": "Target Id"
+            },
+            "description": "Filter by target node ID"
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by priority level",
+              "title": "Priority"
+            },
+            "description": "Filter by priority level"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Maximum number of alerts",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Maximum number of alerts"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/summary": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard Summary",
+        "description": "Return summary statistics for the dashboard header.\nAggregates: total nodes, active alerts, latest update, max water level.",
+        "operationId": "get_dashboard_summary_api_v1_dashboard_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contours/timesteps": {
+      "get": {
+        "tags": [
+          "Contours"
+        ],
+        "summary": "List Contour Timesteps",
+        "description": "Return an ordered list of available chronological contour timesteps.\nExcludes overall peak 'Maxima' envelopes.\n\nExample response:\n    [\"0930\", \"1030\", \"1130\", \"1230\", \"1330\", \"1430\", \"1530\", \"1630\", \"1730\"]",
+        "operationId": "list_contour_timesteps_api_v1_contours_timesteps_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Contour Timesteps Api V1 Contours Timesteps Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contours/has-maxima": {
+      "get": {
+        "tags": [
+          "Contours"
+        ],
+        "summary": "Has Maxima Envelope",
+        "description": "Check if a peak/maximum flood inundation envelope layer is available.",
+        "operationId": "has_maxima_envelope_api_v1_contours_has_maxima_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contours/metadata": {
+      "get": {
+        "tags": [
+          "Contours"
+        ],
+        "summary": "Get Contours Metadata",
+        "description": "Return extended metadata for all available simulation contour frames,\nincluding frame labels, file names, dates, and bounding boxes.",
+        "operationId": "get_contours_metadata_api_v1_contours_metadata_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contours/{timestamp}": {
+      "get": {
+        "tags": [
+          "Contours"
+        ],
+        "summary": "Get Contour Geojson",
+        "description": "Return the GeoJSON FeatureCollection payload for a specific timestep.\n\nExamples:\n    - GET /api/v1/contours/1000\n    - GET /api/v1/contours/260826_1000\n    - GET /api/v1/contours/FloodContours_260826_1000",
+        "operationId": "get_contour_geojson_api_v1_contours__timestamp__get",
+        "parameters": [
+          {
+            "name": "timestamp",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Timestamp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flood-depth/view": {
+      "get": {
+        "tags": [
+          "Flood Depth GeoJSON"
+        ],
+        "summary": "Browser-friendly API viewer",
+        "description": "Render an interactive HTML page for browsing the flood depth API.",
+        "operationId": "view_api_api_v1_flood_depth_view_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flood-depth": {
+      "get": {
+        "tags": [
+          "Flood Depth GeoJSON"
+        ],
+        "summary": "List all available flood depth timesteps",
+        "description": "Return metadata for all available hourly GeoJSON flood depth files.",
+        "operationId": "list_timesteps_api_v1_flood_depth_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flood-depth/latest": {
+      "get": {
+        "tags": [
+          "Flood Depth GeoJSON"
+        ],
+        "summary": "Get the latest flood depth GeoJSON",
+        "description": "Return the most recently generated flood depth GeoJSON file.",
+        "operationId": "get_latest_api_v1_flood_depth_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/flood-depth/{timestep}": {
+      "get": {
+        "tags": [
+          "Flood Depth GeoJSON"
+        ],
+        "summary": "Get flood depth GeoJSON for a specific timestep",
+        "description": "Return flood depth GeoJSON for a given HHMM timestep string (e.g. 0930, 1030).",
+        "operationId": "get_by_timestep_api_v1_flood_depth__timestep__get",
+        "parameters": [
+          {
+            "name": "timestep",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Timestep"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Root",
+        "description": "Health check endpoint.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health",
+        "description": "Detailed health check with watcher status.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AlertListResponse": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "total_active": {
+            "type": "integer",
+            "title": "Total Active",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "AlertListResponse"
+      },
+      "AlertResponse": {
+        "properties": {
+          "alert_definition_id": {
+            "type": "string",
+            "title": "Alert Definition Id"
+          },
+          "onset_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onset Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Type"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "peak_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Value"
+          },
+          "peak_value_units": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Value Units"
+          },
+          "peak_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Time"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "alert_definition_id"
+        ],
+        "title": "AlertResponse"
+      },
+      "DashboardSummary": {
+        "properties": {
+          "total_nodes": {
+            "type": "integer",
+            "title": "Total Nodes",
+            "default": 0
+          },
+          "active_alerts": {
+            "type": "integer",
+            "title": "Active Alerts",
+            "default": 0
+          },
+          "latest_update": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Update"
+          },
+          "max_water_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Water Level"
+          },
+          "max_water_level_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Water Level Node"
+          },
+          "nodes_in_warning": {
+            "type": "integer",
+            "title": "Nodes In Warning",
+            "default": 0
+          },
+          "nodes_in_alert": {
+            "type": "integer",
+            "title": "Nodes In Alert",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DashboardSummary"
+      },
+      "ForecastResponse": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id"
+          },
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "warning_threshold": {
+            "type": "number",
+            "title": "Warning Threshold"
+          },
+          "alert_threshold": {
+            "type": "number",
+            "title": "Alert Threshold"
+          },
+          "readings": {
+            "items": {
+              "$ref": "#/components/schemas/WaterLevelReadingResponse"
+            },
+            "type": "array",
+            "title": "Readings"
+          },
+          "total_readings": {
+            "type": "integer",
+            "title": "Total Readings",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id",
+          "node_name",
+          "latitude",
+          "longitude",
+          "warning_threshold",
+          "alert_threshold"
+        ],
+        "title": "ForecastResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LatestForecastResponse": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id"
+          },
+          "node_name": {
+            "type": "string",
+            "title": "Node Name"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "distance_km": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Km"
+          },
+          "latest_reading": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WaterLevelReadingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warning_threshold": {
+            "type": "number",
+            "title": "Warning Threshold"
+          },
+          "alert_threshold": {
+            "type": "number",
+            "title": "Alert Threshold"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "normal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id",
+          "node_name",
+          "latitude",
+          "longitude",
+          "warning_threshold",
+          "alert_threshold"
+        ],
+        "title": "LatestForecastResponse"
+      },
+      "NodeResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "node_type": {
+            "type": "string",
+            "title": "Node Type"
+          },
+          "warning_threshold": {
+            "type": "number",
+            "title": "Warning Threshold"
+          },
+          "alert_threshold": {
+            "type": "number",
+            "title": "Alert Threshold"
+          },
+          "current_water_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Water Level"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "normal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "latitude",
+          "longitude",
+          "node_type",
+          "warning_threshold",
+          "alert_threshold"
+        ],
+        "title": "NodeResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WaterLevelReadingResponse": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds"
+          },
+          "water_level": {
+            "type": "number",
+            "title": "Water Level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "water_level"
+        ],
+        "title": "WaterLevelReadingResponse"
+      }
+    }
+  }
+}
