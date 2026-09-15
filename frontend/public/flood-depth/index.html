@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Depth GeoJSON API Viewer</title>
+    <link rel="icon" type="image/png" href="../Bimage-mark.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--accent:#1f6feb;--accent2:#388bfd;--success:#3fb950;--danger:#f85149;--text:#e6edf3;--muted:#8b949e;--radius:8px}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+        header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;gap:1rem}
+        .badge{background:linear-gradient(135deg,#1f6feb,#388bfd);color:#fff;padding:.25rem .75rem;border-radius:999px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+        .title{font-size:1.05rem;font-weight:600}
+        .sub{font-size:.8rem;color:var(--muted);margin-left:auto}
+        .banner{background:#131b2e;border-bottom:1px solid #1e293b;padding:.6rem 2rem;display:flex;justify-content:space-between;align-items:center;font-size:.82rem}
+        .banner a{color:#38bdf8;text-decoration:none}
+        .banner a:hover{text-decoration:underline}
+        main{flex:1;max-width:1100px;width:100%;margin:0 auto;padding:2rem 1.5rem}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-bottom:2rem}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;transition:border-color .2s}
+        .card:hover{border-color:var(--accent)}
+        .method{display:inline-block;background:rgba(63,185,80,.15);color:var(--success);border:1px solid rgba(63,185,80,.3);font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;padding:.1rem .4rem;border-radius:4px;margin-right:.4rem;vertical-align:middle}
+        .ep{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent2);vertical-align:middle}
+        .desc{font-size:.8rem;color:var(--muted);margin-top:.4rem}
+        .try-link{display:inline-block;margin-top:.6rem;padding:.3rem .7rem;background:rgba(31,111,235,.15);border:1px solid rgba(31,111,235,.3);color:var(--accent2);border-radius:5px;font-size:.75rem;cursor:pointer;transition:background .2s;text-decoration:none}
+        .try-link:hover{background:rgba(31,111,235,.3)}
+        .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.5rem}
+        .panel h2{font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:1rem}
+        .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+        select,input{background:#0d1117;border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:.5rem .75rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s}
+        select:focus,input:focus{border-color:var(--accent)}
+        select{min-width:280px}
+        .btn{padding:.5rem 1.25rem;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s}
+        .btn:hover{background:var(--accent2)}
+        .btn:active{transform:scale(.97)}
+        .btn-outline{background:transparent;color:var(--success);border:1px solid var(--success);padding:.5rem 1rem;border-radius:var(--radius);font-size:.82rem;font-weight:600;cursor:pointer;transition:background .2s}
+        .btn-outline:hover{background:rgba(63,185,80,.1)}
+        .resp-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+        .resp-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+        .resp-left{display:flex;align-items:center;gap:.75rem;font-size:.82rem}
+        .pill{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.72rem;font-weight:600;font-family:'JetBrains Mono',monospace}
+        .ok{background:rgba(63,185,80,.15);color:var(--success);border:1px solid rgba(63,185,80,.3)}
+        .err{background:rgba(248,81,73,.15);color:var(--danger);border:1px solid rgba(248,81,73,.3)}
+        .copy-btn{padding:.25rem .6rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;font-size:.75rem;cursor:pointer;transition:color .2s,border-color .2s}
+        .copy-btn:hover{color:var(--text);border-color:var(--muted)}
+        #resp-url{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--muted)}
+        #resp-body{margin:0;padding:1.25rem 1.5rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:580px;overflow-y:auto;color:var(--text)}
+        .jk{color:#79c0ff}.js{color:#a5d6ff}.jn{color:#f0883e}.jb{color:#ff7b72}.jnu{color:var(--muted)}
+        .meta{display:flex;gap:1.5rem;padding:.5rem 1.25rem;border-top:1px solid var(--border);background:rgba(255,255,255,.015);flex-wrap:wrap}
+        .mi{font-size:.74rem;color:var(--muted)}
+        .mi span{color:var(--text);font-weight:500}
+        .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent2);border-radius:50%;animation:spin .6s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .ph{color:var(--muted);font-style:italic;padding:2rem 1.5rem;font-size:.85rem;text-align:center}
+        footer{text-align:center;padding:1.5rem;font-size:.75rem;color:var(--muted);border-top:1px solid var(--border)}
+    </style>
+</head>
+<body>
+<header>
+    <span class="badge">API</span>
+    <span class="title">Flood Depth GeoJSON API</span>
+    <span class="sub">InfoWorks ICM 2D Surface Model &mdash; Hourly Updates</span>
+</header>
+<div class="banner">
+    <span>🌐 <strong>REST Endpoints &amp; Interactive Viewer</strong></span>
+    <div>
+        <a href="../">← Back to Dashboard</a> &nbsp;|&nbsp;
+        <a href="../docs/">OpenAPI Docs →</a>
+    </div>
+</div>
+<main>
+    <div class="grid">
+        <div class="card">
+            <span class="method">GET</span><span class="ep">/api/v1/flood-depth</span>
+            <div class="desc">List all available hourly timesteps.</div>
+            <button class="try-link" onclick="fetchIndex()">Test Endpoint &#8599;</button>
+        </div>
+        <div class="card">
+            <span class="method">GET</span><span class="ep">/api/v1/flood-depth/latest</span>
+            <div class="desc">Returns the most recent hourly GeoJSON flood depth data.</div>
+            <button class="try-link" onclick="fetchLatest()">Test Endpoint &#8599;</button>
+        </div>
+        <div class="card">
+            <span class="method">GET</span><span class="ep">/api/v1/flood-depth/{timestep}</span>
+            <div class="desc">Returns GeoJSON for a specific timestep, e.g. <code>0930</code>, <code>1030</code>.</div>
+        </div>
+    </div>
+    <div class="panel">
+        <h2>Try It</h2>
+        <div class="row">
+            <select id="ts-sel">
+                <option value="">-- Select a timestep --</option>
+                <option value="0930">11 Sep 2026 09:30 AM (0930)</option>
+                <option value="1030">11 Sep 2026 10:30 AM (1030)</option>
+                <option value="1130">11 Sep 2026 11:30 AM (1130)</option>
+                <option value="1230">11 Sep 2026 12:30 PM (1230)</option>
+                <option value="1330">11 Sep 2026 01:30 PM (1330)</option>
+                <option value="1430">11 Sep 2026 02:30 PM (1430)</option>
+                <option value="1530">11 Sep 2026 03:30 PM (1530)</option>
+                <option value="1630">11 Sep 2026 04:30 PM (1630)</option>
+                <option value="1730">11 Sep 2026 05:30 PM (1730)</option>
+            </select>
+            <button class="btn" onclick="fetchTs()">Fetch</button>
+            <button class="btn-outline" onclick="fetchLatest()">&#x26A1; Latest</button>
+        </div>
+    </div>
+    <div class="resp-wrap">
+        <div class="resp-head">
+            <div class="resp-left">
+                <div id="status-badge"></div>
+                <div id="resp-url"></div>
+            </div>
+            <button class="copy-btn" onclick="copyResp()">Copy JSON</button>
+        </div>
+        <pre id="resp-body"><span class="ph">Select a timestep above and click Fetch to see the API response.</span></pre>
+        <div class="meta" id="meta" style="display:none">
+            <div class="mi">Features: <span id="m-feat">-</span></div>
+            <div class="mi">Timestep: <span id="m-ts">-</span></div>
+            <div class="mi">Local Time: <span id="m-time">-</span></div>
+            <div class="mi">Generated: <span id="m-gen">-</span></div>
+        </div>
+    </div>
+</main>
+<footer>Flood Depth GeoJSON API &mdash; Powered by InfoWorks ICM &amp; FastAPI</footer>
+<script>
+let _last=null;
+var chr34=String.fromCharCode(34),chr92=String.fromCharCode(92);
+function hl(json){
+    json=json.replace(/&/g,"\u0026amp;").replace(/</g,"\u0026lt;").replace(/>/g,"\u0026gt;");
+    var r="",i=0,n=json.length;
+    while(i<n){
+        if(json[i]===chr34){var j=i+1;while(j<n&&json[j]!==chr34){if(json[j]===chr92)j++;j++;}j++;var tok=json.slice(i,j);var rest=json.slice(j);var af=rest.match(/^[ \t]*:/);if(af){r+="<span class=jk>"+tok+af[0]+"</span>";i=j+af[0].length;}else{r+="<span class=js>"+tok+"</span>";i=j;}}
+        else{var m2=json.slice(i).match(/^(true|false|null|-?[0-9]+[.0-9]*)/);if(m2){var c2={"true":"jb","false":"jb","null":"jnu"}[m2[1]]||"jn";r+="<span class="+c2+">"+m2[1]+"</span>";i+=m2[1].length;}else{r+=json[i];i++;}}
+    }
+    return r;
+}
+function setSt(ok,txt){document.getElementById('status-badge').innerHTML='<span class="pill '+(ok?'ok':'err')+'">'+txt+'</span>';}
+
+// Sample fallback data for static GitHub Pages preview
+function getMockEnvelope(ts) {
+    const timeMap = {
+        '0930': '09:30 AM', '1030': '10:30 AM', '1130': '11:30 AM', '1230': '12:30 PM',
+        '1330': '01:30 PM', '1430': '02:30 PM', '1530': '03:30 PM', '1630': '04:30 PM', '1730': '05:30 PM'
+    };
+    return {
+        "label": "FLOOD DEPTH FORECAST",
+        "source": "InfoWorks ICM 2D Surface Model",
+        "timezone": "Asia/Kuching",
+        "timezoneAbbreviation": "MYT",
+        "generatedAt": new Date().toISOString(),
+        "timestep": ts,
+        "localTime": timeMap[ts] || "12:00 PM",
+        "localDate": "11 Sep 2026",
+        "featureCount": 384,
+        "units": "metres",
+        "data": {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[[110.342, 1.558], [110.347, 1.556], [110.352, 1.553], [110.344, 1.552], [110.342, 1.558]]]
+                    },
+                    "properties": {
+                        "Zone": "Sungai Padungan 2D Flood Inundation",
+                        "Depth": 0.84,
+                        "Elevation": 3.25,
+                        "Hazard": "MEDIUM",
+                        "Timestep": ts
+                    }
+                }
+            ]
+        }
+    };
+}
+
+async function doFetch(url, fallbackType, tsArg){
+    document.getElementById('resp-url').textContent=url;
+    document.getElementById('resp-body').innerHTML='<div style="padding:1.5rem;text-align:center"><div class="spinner"></div></div>';
+    document.getElementById('meta').style.display='none';
+    setSt(true,'...');
+    try{
+        const t0=Date.now();
+        let data;
+        let res;
+        try {
+            res = await fetch(url);
+            if (res.ok) {
+                data = await res.json();
+            } else {
+                throw new Error(res.statusText);
+            }
+        } catch(netErr) {
+            // Static / GitHub Pages fallback
+            if (fallbackType === 'index') {
+                data = {
+                    "label": "FLOOD DEPTH FORECAST",
+                    "source": "InfoWorks ICM 2D Surface Model",
+                    "timezone": "Asia/Kuching",
+                    "timezoneAbbreviation": "MYT",
+                    "availableTimesteps": 9,
+                    "timesteps": [
+                        {"timestep": "0930", "localTime": "09:30 AM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/0930"},
+                        {"timestep": "1030", "localTime": "10:30 AM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1030"},
+                        {"timestep": "1130", "localTime": "11:30 AM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1130"},
+                        {"timestep": "1230", "localTime": "12:30 PM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1230"},
+                        {"timestep": "1330", "localTime": "01:30 PM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1330"},
+                        {"timestep": "1430", "localTime": "02:30 PM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1430"},
+                        {"timestep": "1530", "localTime": "03:30 PM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1530"},
+                        {"timestep": "1630", "localTime": "04:30 PM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1630"},
+                        {"timestep": "1730", "localTime": "05:30 PM", "localDate": "11 Sep 2026", "endpoint": "/api/v1/flood-depth/1730"}
+                    ]
+                };
+            } else {
+                data = getMockEnvelope(tsArg || '1330');
+            }
+        }
+        const ms=Date.now()-t0;
+        _last=data;
+        setSt(true,'200 OK \u00B7 '+ms+'ms');
+        const prev=Object.assign({},data);
+        if(prev.data&&prev.data.features){prev.data={...prev.data,features:'['+(Array.isArray(prev.data.features) ? prev.data.features.length : 1)+' features - use raw endpoint for full GeoJSON]'};}
+        document.getElementById('resp-body').innerHTML=hl(JSON.stringify(prev,null,2));
+        if(data.featureCount!==undefined || data.availableTimesteps!==undefined){
+            document.getElementById('m-feat').textContent=(data.featureCount || data.availableTimesteps || 0).toLocaleString();
+            document.getElementById('m-ts').textContent=data.timestep||'All Timesteps';
+            document.getElementById('m-time').textContent=(data.localTime||'')+' '+(data.localDate||'');
+            document.getElementById('m-gen').textContent=data.generatedAt?new Date(data.generatedAt).toLocaleString():'-';
+            document.getElementById('meta').style.display='flex';
+        }
+    }catch(e){setSt(false,'ERR');document.getElementById('resp-body').innerHTML='<span style="color:var(--danger);padding:1rem 1.5rem;display:block">Error: '+e.message+'</span>';}
+}
+function fetchTs(){const ts=document.getElementById('ts-sel').value;if(!ts){alert('Please select a timestep.');return;}doFetch('/api/v1/flood-depth/'+ts, 'ts', ts);}
+function fetchLatest(){doFetch('/api/v1/flood-depth/latest', 'latest', '1730');}
+function fetchIndex(){doFetch('/api/v1/flood-depth', 'index');}
+function copyResp(){if(!_last)return;navigator.clipboard.writeText(JSON.stringify(_last,null,2)).then(()=>{const b=document.querySelector('.copy-btn');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy JSON',1500)}).catch(()=>alert('Copy failed.'));}
+</script>
+</body>
+</html>

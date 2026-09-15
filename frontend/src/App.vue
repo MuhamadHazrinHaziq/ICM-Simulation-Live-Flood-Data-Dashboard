@@ -6,8 +6,12 @@ const sidebarOpen = ref(true)
 const logoLoaded = ref(true)
 const baseUrl = import.meta.env.BASE_URL
 const apiBaseUrl = (import.meta.env.VITE_API_URL as string | undefined) || ''
+const isProduction = import.meta.env.PROD
 const docsUrl = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/docs` : `${baseUrl}docs/`
 const healthUrl = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/health` : `${baseUrl}health/`
+const geoJsonViewerUrl = apiBaseUrl
+  ? `${apiBaseUrl.replace(/\/$/, '')}/api/v1/flood-depth/view`
+  : (isProduction ? `${baseUrl}flood-depth/` : '/api/v1/flood-depth/view')
 </script>
 
 <template>
@@ -48,6 +52,10 @@ const healthUrl = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/health` : `${ba
         <a class="nav-link active" href="#">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span v-show="sidebarOpen">Dashboard</span>
+        </a>
+        <a class="nav-link" :href="geoJsonViewerUrl" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          <span v-show="sidebarOpen">GeoJSON API</span>
         </a>
         <a class="nav-link" :href="docsUrl" target="_blank">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
