@@ -1,4 +1,4 @@
-﻿"""
+"""
 GeoJSON Flood Depth API Router.
 
 Serves hourly ICM 2D contour GeoJSON files as clean REST API endpoints,
@@ -114,6 +114,9 @@ async def view_api():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flood Depth API Viewer</title>
+    <link rel="icon" type="image/png" href="/Bimage-mark.png">
+    <link rel="apple-touch-icon" href="/Bimage-mark.png">
+    <link rel="alternate icon" href="/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
